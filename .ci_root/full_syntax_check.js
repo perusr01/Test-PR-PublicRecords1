@@ -1,15 +1,25 @@
 #!node
 
 let arg = process.argv.slice(2);
-let file = (arg[0] && isNaN(arg[0])) ? arg[0] : null;
-let per = (arg[0] && !file) ? parseFloat(arg[0]) : 1;
+let file = null;
+let per = 1;
+let discard_nofast = false;
+let only_nofast = false;
+
+// process arguments
+for (let a of arg) {
+  if (a.toLowerCase() == '-n') discard_nofast = true;
+  else if (a.toLowerCase() == '-o') only_nofast = true;
+  else if (isNaN(a)) file = a;
+  else per = parseFloat(a);
+}
 
 const fs = require('fs');
 const ut = require('./utility_lib.js');
 
 const temp_ecl_file = "../_tmp_ecl.ecl";
 const warnings_file = "_syn_check_warnings.log";
-const exceptions_file = "query_exceptions.json";
+const exceptions_file = "nofast_queries.txt";
 
 let workpath = '..';
 
@@ -44,9 +54,13 @@ let main = async function() {
     let prog = Math.round((num/len) * 100);
     let pstr = (num + '').padStart(3, ' ') + ' ' + (prog + '%').padStart(4, ' ');
     
-    // ignore files that don't exist
+    // ignore files that don't exist and skip fast/nofast files as needed
     if (!path) {
-      console.log(pstr + '  []      ' + '   0.0s  ' + item);
+      console.log(pstr + '  []      ' + '   ----  ' + item);
+      continue;
+    }
+    else if ((discard_nofast && !fast) || (only_nofast && fast)) {
+      console.log(pstr + '  [SKIP]  ' + '   ----  ' + item);
       continue;
     }
     else total++;
